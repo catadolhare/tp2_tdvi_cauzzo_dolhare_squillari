@@ -37,15 +37,18 @@ best_split = 0
 best_leaf = 0
 best_pred = None
 
-for i in range(1, 30):
+'''for i in range(1, 30):
+    print(f'max depth {i}.')
     for j in range(100, 1000, 100):
+        print(f'min sample split {j}.')
         for l in range(100, 1000, 100):
-            tree = DecisionTreeClassifier(max_depth=i, min_samples_split=j, min_samples_leaf=l, random_state=2345)
+            print(f'min sample leaf {l}.')
+            tree = make_pipeline(SimpleImputer(), DecisionTreeClassifier(max_depth=i, min_samples_split=j, min_samples_leaf=l, random_state=2345))
             tree.fit(x_entrenamiento, y_entrenamiento)
             
             y_test_preds = tree.predict(x_evaluacion)
             y_test_probs = tree.predict_proba(x_evaluacion)[:, tree.classes_ == 1].squeeze()
-            roc_auc = tree.roc_auc_score(y_evaluacion, y_test_preds)
+            roc_auc = roc_auc_score(y_evaluacion, y_test_preds)
 
             if roc_auc > best_auc:
                 best_score = roc_auc
@@ -57,13 +60,17 @@ for i in range(1, 30):
 print(f'Best score: {best_auc:.2f}.')
 print(f'Best depth: {best_depth}.')
 print(f'Best split: {best_split}.')
-print(f'Best leaf: {best_leaf}.')
+print(f'Best leaf: {best_leaf}.')'''
 
-best = DecisionTreeClassifier(max_depth=best_depth, min_samples_split=best_split, min_samples_leaf=best_leaf, random_state=2345)
+best = DecisionTreeClassifier(max_depth=29, min_samples_split=900, min_samples_leaf=900, random_state=2345)
+best.fit(x_entrenamiento, y_entrenamiento)
 
 # Predict on the evaluation set
 eval_data = eval_data.select_dtypes(include='number')
 y_preds = best.predict_proba(eval_data.drop(columns=["id"]))[:, best.classes_ == 1].squeeze()
+y_preds_evaluacion = best.predict_proba(evaluacion.drop(columns=["id"]))[:, best.classes_ == 1].squeeze()
+roc_auc = roc_auc_score(y_evaluacion, y_preds_evaluacion)
+print(f'Best score: {roc_auc:.2f}.')
 
 # Make the submission file
 submission_df = pd.DataFrame({"id": eval_data["id"], "Label": y_preds})
